@@ -4814,6 +4814,7 @@ dependencies = [
  "kwaak",
  "serde",
  "serde_json",
+ "swiftide",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",

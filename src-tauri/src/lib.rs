@@ -41,7 +41,10 @@ pub async fn run() {
         command_tx,
         command_handle,
         chats: Vec::new(),
+        command_responder: None,
     }));
+
+    AppState::spawn_responder(&app_state);
 
     // Load the kwaak config / repository
     // Start a command handler
