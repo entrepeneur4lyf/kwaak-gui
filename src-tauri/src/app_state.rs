@@ -22,7 +22,16 @@ impl AppState {
     }
 
     pub fn handle_response(&self, response: CommandResponse) {
-        todo!()
+        // let ui_event = match response {
+        //     CommandResponse::Chat(uuid, msg) => UIEvent::ChatMessage(uuid, msg.into()),
+        //     CommandResponse::Activity(uuid, state) => UIEvent::ActivityUpdate(uuid, state),
+        //     CommandResponse::RenameChat(uuid, name) => UIEvent::RenameChat(uuid, name),
+        //     CommandResponse::RenameBranch(uuid, name) => UIEvent::RenameBranch(uuid, name),
+        //     CommandResponse::Completed(uuid) => UIEvent::CommandDone(uuid),
+        //     CommandResponse::BackendMessage(uuid, msg) => {
+        //         UIEvent::ChatMessage(uuid, ChatMessage::new_system(&msg))
+        //     }
+        // };
     }
 
     pub fn responder(&self) -> Arc<dyn Responder> {
