@@ -1,3 +1,4 @@
+mod actions;
 mod app_state;
 mod frontend_commands;
 
