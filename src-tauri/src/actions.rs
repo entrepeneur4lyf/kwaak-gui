@@ -1,3 +1,5 @@
+//! Actions are triggered after a Kwaak command has been processed and the state needs to be
+//! updated
 use anyhow::Result;
 use kwaak::chat::ChatState;
 use swiftide::chat_completion;
@@ -21,11 +23,7 @@ pub fn chat_message(
     Ok(())
 }
 
-pub fn activity_update(
-    state: &mut AppState,
-    session_id: Uuid,
-    state: chat_completion::ActivityState,
-) -> Result<()> {
+pub fn activity_update(state: &mut AppState, session_id: Uuid, update: &str) -> Result<()> {
     //
     Ok(())
 }
@@ -59,7 +57,7 @@ pub fn completed(state: &mut AppState, session_id: Uuid) -> Result<()> {
     Ok(())
 }
 
-pub fn backend_message(session_id: Uuid, message: String) -> Result<()> {
+pub fn backend_message(state: &mut AppState, session_id: Uuid, message: String) -> Result<()> {
     let Some(chat) = state.chats.iter_mut().find(|c| c.uuid == session_id) else {
         anyhow::bail!("chat not found");
     };

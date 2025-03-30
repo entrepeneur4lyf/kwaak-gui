@@ -4,9 +4,10 @@
 /// Event flow: ui -> frontend command(uuid, channel(CommandResponseWithUuid)) -> backend command
 /// dispatched(responder) -> responder forwards to app commands and mirrors to frontend
 ///
-/// Ensusures that the backend state is always correct, frontend can show live updates
+/// Ensures that the backend state is always correct, frontend can show live updates
 use std::sync::{Arc, Mutex};
 
+use anyhow::Result;
 use async_trait::async_trait;
 use kwaak::{
     chat::Chat,
@@ -21,7 +22,30 @@ use uuid::Uuid;
 use crate::actions;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct CommandResponseWithUuid(Uuid, CommandResponse);
+#[serde(rename_all = "camelCase")]
+pub struct CommandResponseWithUuid {
+    session_id: Uuid,
+    #[serde(with = "CommandResponseDef", flatten)]
+    content: CommandResponse,
+}
+
+/// Wraps Kwaak command response so we can control how it serializes
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(remote = "CommandResponse", tag = "event")]
+pub enum CommandResponseDef {
+    /// Messages coming from an agent
+    Chat(swiftide::chat_completion::ChatMessage),
+    /// Short activity updates
+    Activity(String),
+    /// A chat has been renamed
+    RenameChat(String),
+    /// A chat branch has been renamed
+    RenameBranch(String),
+    /// Backend system messages (kwaak currently just renders these as system chat like messages)
+    BackendMessage(String),
+    /// A command has been completed
+    Completed,
+}
 
 pub struct AppState {
     pub repository: Repository,
@@ -36,14 +60,14 @@ impl AppState {
         self.command_tx.send(event).unwrap();
     }
 
-    pub fn handle_response(&mut self, response: CommandResponseWithUuid) {
-        let uuid = response.0;
-        match response.1 {
+    pub fn handle_response(&mut self, response: CommandResponseWithUuid) -> Result<()> {
+        let uuid = response.session_id;
+        match response.content {
             // New message is received in a chat
             CommandResponse::Chat(msg) => actions::chat_message(self, uuid, msg),
             // An update message on a running command (short string messages, like running
             // completions, indexing code, etc)
-            CommandResponse::Activity(state) => actions::activity_update(self, uuid, state),
+            CommandResponse::Activity(state) => actions::activity_update(self, uuid, &state),
             // A chat has been renamed
             CommandResponse::RenameChat(name) => actions::rename_chat(self, uuid, name),
             // A git branch has been renamed
@@ -52,8 +76,8 @@ impl AppState {
             // interaction
             CommandResponse::Completed => actions::completed(self, uuid),
             // A message from the backend has been received
-            CommandResponse::BackendMessage(msg) => actions::backend_message(uuid, msg),
-        };
+            CommandResponse::BackendMessage(msg) => actions::backend_message(self, uuid, msg),
+        }
     }
 
     pub fn responder_from_channel(
@@ -103,13 +127,20 @@ pub struct AppCommandResponder {
 pub struct TauriCommandResponder(
     uuid::Uuid,
     tauri::ipc::Channel<CommandResponseWithUuid>,
-    mpsc::UnboundedSender<CommandResponseWithUuid>,
+    Arc<mpsc::UnboundedSender<CommandResponseWithUuid>>,
 );
 
+#[async_trait]
 impl Responder for TauriCommandResponder {
-    fn send(&self, response: CommandResponse) {
-        let _ = self.1.send(CommandResponseWithUuid(self.0, response));
-        let _ = self.2.send(CommandResponseWithUuid(self.0, response));
+    async fn send(&self, response: CommandResponse) {
+        let _ = self.1.send(CommandResponseWithUuid {
+            session_id: self.0,
+            content: response.clone(),
+        });
+        let _ = self.2.send(CommandResponseWithUuid {
+            session_id: self.0,
+            content: response.clone(),
+        });
     }
 }
 

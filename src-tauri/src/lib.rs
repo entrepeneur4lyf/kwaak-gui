@@ -57,13 +57,25 @@ pub async fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            // These commands wrap the kwaak commands exactly as is
+            frontend_commands::quit,
+            frontend_commands::show_config,
+            frontend_commands::index_repository,
+            frontend_commands::stop_agent,
+            frontend_commands::chat,
+            frontend_commands::diff,
+            frontend_commands::exec,
+            frontend_commands::retry_chat,
+            // TODO: Can imagine other commands to read (maybe write) on the internal state would
+            // go here as well
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 fn load_repository() -> Repository {
     let config =
-        Config::load(Path::new("kwaak.toml")).expect("failed to load config, is it present?");
+        Config::load(Some(Path::new("kwaak.toml"))).expect("failed to load config, is it present?");
     Repository::from_config(config)
 }
