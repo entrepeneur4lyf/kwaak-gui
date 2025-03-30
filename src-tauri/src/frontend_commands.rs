@@ -2,9 +2,8 @@
 //!
 //! The Channel is used to send responses back to the frontend. These responses are duplicated
 //! so that the internal tauri state is also updated with the response.
-use std::sync::{Arc, Mutex};
 
-use kwaak::commands::{Command, CommandEvent, Responder};
+use kwaak::commands::{Command, CommandEvent};
 use tauri::ipc::Channel;
 
 use crate::app_state::{AppState, CommandResponseWithUuid};

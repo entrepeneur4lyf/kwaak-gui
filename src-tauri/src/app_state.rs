@@ -110,7 +110,7 @@ impl AppState {
             tx: Arc::new(tx),
             _handle: AbortOnDropHandle::new(handle),
         };
-        app.lock().unwrap().command_responder = Some(responder.into());
+        app.lock().unwrap().command_responder = Some(responder);
     }
 }
 

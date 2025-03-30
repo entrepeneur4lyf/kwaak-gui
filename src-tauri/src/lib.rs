@@ -9,13 +9,11 @@ use std::{
 
 use app_state::AppState;
 use kwaak::{
-    commands::{self, CommandEvent},
+    commands::{self},
     config::Config,
     repository::Repository,
 };
 use tauri::Manager as _;
-use tokio::sync::mpsc;
-use tokio_util::task::AbortOnDropHandle;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -31,7 +29,7 @@ pub async fn run() {
     let _guard = kwaak::kwaak_tracing::init(&repository, false);
 
     // Start the backend
-    let mut handler = commands::CommandHandler::from_repository(repository.clone());
+    let handler = commands::CommandHandler::from_repository(repository.clone());
 
     let command_tx = handler.command_tx().clone();
 
